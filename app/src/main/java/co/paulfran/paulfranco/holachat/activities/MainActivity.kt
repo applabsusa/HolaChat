@@ -1,4 +1,4 @@
-package co.paulfran.paulfranco.holachat
+package co.paulfran.paulfranco.holachat.activities
 
 import android.content.Context
 import android.content.Intent
@@ -8,13 +8,13 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
-import android.support.v4.view.ViewPager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import co.paulfran.paulfranco.holachat.R
 import com.google.firebase.auth.FirebaseAuth
 
 import kotlinx.android.synthetic.main.activity_main.*
@@ -53,8 +53,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
+            R.id.action_profile -> onProfile()
             R.id.action_logout -> onLogout()
-
         }
 
         return super.onOptionsItemSelected(item)
@@ -64,6 +64,10 @@ class MainActivity : AppCompatActivity() {
         firebaseAuth.signOut()
         startActivity(LoginActivity.newIntent(this))
         finish()
+    }
+
+    private fun onProfile() {
+        startActivity(ProfileActivity.newIntent(this))
     }
 
 
