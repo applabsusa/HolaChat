@@ -17,6 +17,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import co.paulfran.paulfranco.holachat.R
+import co.paulfran.paulfranco.holachat.fragments.ChatsFragment
+import co.paulfran.paulfranco.holachat.fragments.StatusFragment
+import co.paulfran.paulfranco.holachat.fragments.StatusUpdateFragment
 import com.google.firebase.auth.FirebaseAuth
 
 import kotlinx.android.synthetic.main.activity_main.*
@@ -27,6 +30,10 @@ class MainActivity : AppCompatActivity() {
     private val firebaseAuth = FirebaseAuth.getInstance()
 
     private var mSectionsPagerAdapter: SectionsPagerAdapter? = null
+
+    private val chatsFragment = ChatsFragment()
+    private val statusUpdateFragment = StatusUpdateFragment()
+    private val statusFragment = StatusFragment()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,10 +50,29 @@ class MainActivity : AppCompatActivity() {
         resizeTabs()
         tabs.getTabAt(1)?.select()
 
-        fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show()
-        }
+        tabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabReselected(p0: TabLayout.Tab?) {
+
+            }
+
+            override fun onTabUnselected(p0: TabLayout.Tab?) {
+
+            }
+
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                when(tab?.position) {
+                    0 -> {fab.hide()}
+                    1 -> {fab.show()}
+                    2 -> {fab.hide()}
+                }
+            }
+
+        })
+
+//        fab.setOnClickListener { view ->
+//            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+//                    .setAction("Action", null).show()
+//        }
 
     }
 
@@ -55,6 +81,10 @@ class MainActivity : AppCompatActivity() {
         val layoutParams = layout.layoutParams as LinearLayout.LayoutParams
         layoutParams.weight = 0.4f
         layout.layoutParams = layoutParams
+    }
+
+    fun onNewChat(v: View) {
+
     }
 
     override fun onResume() {
@@ -97,7 +127,12 @@ class MainActivity : AppCompatActivity() {
 
         override fun getItem(position: Int): Fragment {
 
-            return PlaceholderFragment.newInstance(position + 1)
+            return when(position) {
+                0 -> statusUpdateFragment
+                1 -> chatsFragment
+                2 -> statusFragment
+                else -> statusFragment
+            }
         }
 
         override fun getCount(): Int {
@@ -107,29 +142,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    class PlaceholderFragment : Fragment() {
-
-        override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                                  savedInstanceState: Bundle?): View? {
-            val rootView = inflater.inflate(R.layout.fragment_main, container, false)
-            rootView.section_label.text = getString(R.string.section_format, arguments?.getInt(ARG_SECTION_NUMBER))
-            return rootView
-        }
-
-        companion object {
-
-            private val ARG_SECTION_NUMBER = "section_number"
-
-
-            fun newInstance(sectionNumber: Int): PlaceholderFragment {
-                val fragment = PlaceholderFragment()
-                val args = Bundle()
-                args.putInt(ARG_SECTION_NUMBER, sectionNumber)
-                fragment.arguments = args
-                return fragment
-            }
-        }
-    }
 
     companion object {
         fun newIntent(context: Context) = Intent(context, MainActivity::class.java)

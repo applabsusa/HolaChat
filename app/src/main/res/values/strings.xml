@@ -14,4 +14,7 @@
     <string name="action_profile">Profile</string>
     <string name="text_apply">Apply</string>
     <string name="text_delete">Delete</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
