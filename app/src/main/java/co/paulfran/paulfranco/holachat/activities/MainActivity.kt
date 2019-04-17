@@ -9,11 +9,13 @@ import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
 import android.os.Bundle
+import android.support.design.widget.TabLayout
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import co.paulfran.paulfranco.holachat.R
 import com.google.firebase.auth.FirebaseAuth
 
@@ -36,6 +38,10 @@ class MainActivity : AppCompatActivity() {
 
         // Set up the ViewPager with the sections adapter.
         container.adapter = mSectionsPagerAdapter
+        container.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tabs))
+        tabs.addOnTabSelectedListener(TabLayout.ViewPagerOnTabSelectedListener(container))
+        resizeTabs()
+        tabs.getTabAt(1)?.select()
 
         fab.setOnClickListener { view ->
             Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
@@ -44,6 +50,21 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    fun resizeTabs() {
+        val layout = (tabs.getChildAt(0) as LinearLayout).getChildAt(0) as LinearLayout
+        val layoutParams = layout.layoutParams as LinearLayout.LayoutParams
+        layoutParams.weight = 0.4f
+        layout.layoutParams = layoutParams
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        if (firebaseAuth.currentUser == null) {
+            startActivity(LoginActivity.newIntent(this))
+            finish()
+        }
+    }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
 
