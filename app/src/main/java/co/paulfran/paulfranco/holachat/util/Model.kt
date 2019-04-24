@@ -11,3 +11,7 @@ data class  User(
 )
 
 
+data class Contact(
+        val name: String?,
+        val phone: String?
+)

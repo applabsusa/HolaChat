@@ -1,7 +1,10 @@
 package co.paulfran.paulfranco.holachat.activities
 
+import android.Manifest.permission.READ_CONTACTS
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity
 
@@ -10,6 +13,9 @@ import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
 import android.os.Bundle
 import android.support.design.widget.TabLayout
+import android.support.v4.app.ActivityCompat
+import android.support.v4.content.ContextCompat
+import android.support.v7.app.AlertDialog
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -20,10 +26,13 @@ import co.paulfran.paulfranco.holachat.R
 import co.paulfran.paulfranco.holachat.fragments.ChatsFragment
 import co.paulfran.paulfranco.holachat.fragments.StatusFragment
 import co.paulfran.paulfranco.holachat.fragments.StatusUpdateFragment
+import co.paulfran.paulfranco.holachat.util.PERMISSIONS_REQUEST_READ_CONTACTS
+import co.paulfran.paulfranco.holachat.util.REQUEST_NEW_CHAT
 import com.google.firebase.auth.FirebaseAuth
 
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_main.view.*
+import java.util.jar.Manifest
 
 class MainActivity : AppCompatActivity() {
 
@@ -76,6 +85,8 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+
+
     fun resizeTabs() {
         val layout = (tabs.getChildAt(0) as LinearLayout).getChildAt(0) as LinearLayout
         val layoutParams = layout.layoutParams as LinearLayout.LayoutParams
@@ -84,7 +95,48 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun onNewChat(v: View) {
+        if(ContextCompat.checkSelfPermission(this, READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            // permission not granted
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, READ_CONTACTS)) {
+                AlertDialog.Builder(this)
+                        .setTitle("Contacts Permission")
+                        .setMessage("This app requires access to your contacts to initiate a conversation")
+                        .setPositiveButton("Ask Me") { dialog, which -> requestContactsPermission() }
+                        .setNegativeButton("No") { dialog, which -> }
+                        .show()
+            } else {
+                requestContactsPermission()
+            }
+        } else {
+            // permission granted
+            startNewActivity()
+        }
+    }
 
+    fun startNewActivity() {
+        startActivityForResult(ContactsActivity.newIntent(this), REQUEST_NEW_CHAT)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (resultCode == Activity.RESULT_OK) {
+            when (requestCode) {
+                REQUEST_NEW_CHAT -> {}
+            }
+        }
+    }
+
+    fun requestContactsPermission() {
+        ActivityCompat.requestPermissions(this, arrayOf(READ_CONTACTS), PERMISSIONS_REQUEST_READ_CONTACTS)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        when (requestCode) {
+            PERMISSIONS_REQUEST_READ_CONTACTS -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    startNewActivity()
+                }
+            }
+        }
     }
 
     override fun onResume() {
@@ -144,6 +196,8 @@ class MainActivity : AppCompatActivity() {
 
 
     companion object {
+        val PARAM_NAME = "Param name"
+        val PARAM_PHONE = "Param phone"
         fun newIntent(context: Context) = Intent(context, MainActivity::class.java)
     }
 }
