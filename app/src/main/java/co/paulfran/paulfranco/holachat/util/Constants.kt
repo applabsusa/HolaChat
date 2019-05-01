@@ -16,3 +16,4 @@ val DATA_USER_CHATS = "userChats"
 
 val DATA_IMAGES = "Images"
 val DATA_CHATS = "Chats"
+val DATA_CHAT_PARTICIPANTS = "chatParticipants"

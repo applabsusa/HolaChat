@@ -5,10 +5,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.RelativeLayout
 import android.widget.TextView
 import co.paulfran.paulfranco.holachat.R
+import co.paulfran.paulfranco.holachat.R.id.chatIV
 import co.paulfran.paulfranco.holachat.listeners.ChatClickListener
-import co.paulfran.paulfranco.holachat.util.populateImage
+import co.paulfran.paulfranco.holachat.util.*
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class ChatsAdapter(val chats: ArrayList<String>) : RecyclerView.Adapter<ChatsAdapter.ChatsViewHolder>(){
 
@@ -38,12 +43,54 @@ class ChatsAdapter(val chats: ArrayList<String>) : RecyclerView.Adapter<ChatsAda
 
     class ChatsViewHolder(view: View) : RecyclerView.ViewHolder(view) {
 
+        private val firebaseDB = FirebaseFirestore.getInstance()
+        private val userId = FirebaseAuth.getInstance().currentUser?.uid
+        private var layout = view.findViewById<RelativeLayout>(R.id.chatLayout)
+        private var progressLayout = view.findViewById<LinearLayout>(R.id.progressLayout)
+        private var partnerId: String? = null
+        private var chatImageUrl: String? = null
+        private var chatName: String? = null
         private var chatIV = view.findViewById<ImageView>(R.id.chatIV)
-        private var chatName = view.findViewById<TextView>(R.id.chatTV)
+        private var chatNameTV = view.findViewById<TextView>(R.id.chatTV)
 
         fun bind(chatId: String, listener: ChatClickListener?) {
-            populateImage(chatIV.context, "", chatIV, R.drawable.default_user)
-            chatName.text = chatId
+            progressLayout.visibility = View.VISIBLE
+            progressLayout.setOnTouchListener { v, event -> true }
+
+            firebaseDB.collection(DATA_CHATS)
+                    .document(chatId)
+                    .get()
+                    .addOnSuccessListener { document ->
+                        val chatParticipants = document[DATA_CHAT_PARTICIPANTS]
+                        if (chatParticipants != null) {
+                            for (participant in chatParticipants as ArrayList<String>) {
+                                if (participant != null && !participant.equals(userId)) {
+                                    partnerId = participant
+                                    firebaseDB.collection(DATA_USERS)
+                                            .document(partnerId!!)
+                                            .get()
+                                            .addOnSuccessListener { document ->
+                                                val user = document.toObject(User::class.java)
+                                                chatImageUrl = user?.imageUrl
+                                                chatName = user?.name
+                                                chatNameTV.text = user?.name
+                                                populateImage(chatIV.context, user?.imageUrl, chatIV, R.drawable.default_user)
+                                                progressLayout.visibility = View.GONE
+                                            }
+                                            .addOnFailureListener { e ->
+                                                e.printStackTrace()
+                                                progressLayout.visibility = View.GONE
+
+                                            }
+                                }
+                            }
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        e.printStackTrace()
+                        progressLayout.visibility = View.GONE
+                    }
+            layout.setOnClickListener { listener?.onChatClicked(chatId, partnerId, chatImageUrl, chatName) }
         }
     }
 }
