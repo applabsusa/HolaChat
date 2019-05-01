@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity
 
@@ -22,22 +23,28 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.Toast
 import co.paulfran.paulfranco.holachat.R
 import co.paulfran.paulfranco.holachat.fragments.ChatsFragment
 import co.paulfran.paulfranco.holachat.fragments.StatusFragment
 import co.paulfran.paulfranco.holachat.fragments.StatusUpdateFragment
+import co.paulfran.paulfranco.holachat.listeners.FailureCallback
+import co.paulfran.paulfranco.holachat.util.DATA_USERS
+import co.paulfran.paulfranco.holachat.util.DATA_USER_PHONE
 import co.paulfran.paulfranco.holachat.util.PERMISSIONS_REQUEST_READ_CONTACTS
 import co.paulfran.paulfranco.holachat.util.REQUEST_NEW_CHAT
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_main.view.*
 import java.util.jar.Manifest
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), FailureCallback {
 
+
+    private val firebaseDB = FirebaseFirestore.getInstance()
     private val firebaseAuth = FirebaseAuth.getInstance()
-
     private var mSectionsPagerAdapter: SectionsPagerAdapter? = null
 
     private val chatsFragment = ChatsFragment()
@@ -47,6 +54,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        chatsFragment.setFailureCallbackListener(this)
 
         setSupportActionBar(toolbar)
 
@@ -78,6 +87,8 @@ class MainActivity : AppCompatActivity() {
 
         })
 
+
+
 //        fab.setOnClickListener { view ->
 //            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
 //                    .setAction("Action", null).show()
@@ -85,6 +96,11 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    override fun onUserError() {
+        Toast.makeText(this, "User not found", Toast.LENGTH_SHORT).show()
+        startActivity(LoginActivity.newIntent(this))
+        finish()
+    }
 
 
     fun resizeTabs() {
@@ -120,8 +136,41 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK) {
             when (requestCode) {
-                REQUEST_NEW_CHAT -> {}
+                REQUEST_NEW_CHAT -> {
+                    val name = data?.getStringExtra(PARAM_NAME) ?: ""
+                    val phone = data?.getStringExtra(PARAM_PHONE) ?: ""
+                    checkNewChatUser(name, phone)
+                }
             }
+        }
+    }
+
+    private fun checkNewChatUser(name: String, phone: String) {
+        if (!name.isNullOrEmpty() && !phone.isNullOrEmpty()) {
+            firebaseDB.collection(DATA_USERS)
+                    .whereEqualTo(DATA_USER_PHONE, phone)
+                    .get()
+                    .addOnSuccessListener { result ->
+                        if (result.documents.size > 0) {
+                            chatsFragment.newChat(result.documents[0].id)
+                        } else {
+                            AlertDialog.Builder(this)
+                                    .setTitle("User Not Found")
+                                    .setMessage("$name does not have an account. Send them an SMS to install this app")
+                                    .setPositiveButton("Ok") { dialog, which ->
+                                        val intent = Intent(Intent.ACTION_VIEW)
+                                        intent.data = Uri.parse("sms:$phone")
+                                        intent.putExtra("sms body", "Hi. I am using this new cool chat app. You should install it to so we can chat there")
+                                        startActivity(intent)
+                                    }
+                                    .setNegativeButton("cancel", null)
+                                    .show()
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        Toast.makeText(this, "An Error occurred. Please try again later", Toast.LENGTH_SHORT).show()
+                        e.printStackTrace()
+                    }
         }
     }
 
